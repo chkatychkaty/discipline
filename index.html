@@ -1,0 +1,416 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自律的朝聖之旅</title>
+    <link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon.png">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary-coral: #E57373;   
+            --soft-rose: #D4A5A5;      
+            --earth-bg: #F5F2ED;       
+            --card-white: #FFFFFF;
+            --text-main: #5D5451;      
+            --text-sub: #8D837F;
+            --weekly-blue: #9DAFBD;
+            --monthly-purple: #B0A4B1;
+            --disabled-gray: #E0D6D1;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--earth-bg); color: var(--text-main);
+            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+
+        header {
+            text-align: center; padding: 30px 20px;
+            background: linear-gradient(135deg, #E8D7D0 0%, #D4A5A5 100%);
+            color: var(--text-main); width: 100%; box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+
+        nav { display: flex; gap: 10px; margin-top: -22px; z-index: 10; }
+        nav button {
+            padding: 10px 25px; border: none; border-radius: 20px;
+            background: var(--card-white); color: var(--text-sub); cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: 0.3s; font-weight: bold;
+        }
+        nav button.active { background: var(--primary-coral); color: white; }
+
+        .container { width: 92%; max-width: 550px; margin-top: 35px; padding-bottom: 60px; }
+
+        .stats-panel {
+            background: var(--card-white); border-radius: 18px; padding: 20px;
+            margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+        .panel-title { font-weight: bold; margin-bottom: 15px; display: block; font-size: 0.95rem; }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+        .calendar-cell { aspect-ratio: 0.8; border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding-top: 5px; font-size: 0.7rem; background: #F9F7F5; transition: 0.3s; color: var(--text-sub); }
+        
+        .cell-perfect { background-color: var(--primary-coral) !important; color: white !important; }
+        .cell-good { background-color: #F8BDBD !important; color: white !important; }
+        .cell-started { background-color: #EAE3DC !important; color: var(--text-main) !important; }
+
+        .emoji-heart { color: #FF6B6B; display: inline-block; font-style: normal; }
+        .emoji-broken { 
+            filter: grayscale(100%) brightness(0%) !important;
+            -webkit-filter: grayscale(100%) brightness(0%) !important;
+            display: inline-block; transform: scale(0.95); font-style: normal;
+        }
+        .emoji-trail { font-size: 0.5rem; line-height: 1.1; margin-top: 3px; word-break: break-all; }
+
+        .weekly-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .week-box { padding: 15px 5px; border-radius: 10px; background: #EEE; text-align: center; font-size: 0.8rem; }
+        .week-done { background: var(--weekly-blue); color: white; }
+        
+        .monthly-track { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+        .month-circle { aspect-ratio: 1; border-radius: 50%; background: #EEE; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; transition: 0.3s; }
+        .month-done { background: var(--monthly-purple); color: white; }
+
+        .item-card { background: var(--card-white); padding: 16px; border-radius: 12px; margin-bottom: 12px; display: flex; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); border-left: 4px solid transparent; transition: 0.3s; }
+        .item-card.completed { border-left-color: var(--soft-rose); }
+        .item-card.completed span { text-decoration: line-through; color: #B5A9A4; }
+        .item-card.rest-day { background: #F0EDE9; opacity: 0.5; cursor: not-allowed; border-left-color: var(--disabled-gray); }
+
+        .sweets-zone { flex-direction: column; align-items: flex-start; gap: 12px; border-left: 4px solid #333; }
+        .sweets-row { display: flex; width: 100%; justify-content: space-between; align-items: center; }
+        .heart-btn { background: #F9F7F5; border: 1px solid #EEE; border-radius: 20px; padding: 6px 15px; cursor: pointer; font-size: 0.85rem; }
+
+        .progress-bar-bg { height: 8px; background: #EAE3DC; border-radius: 10px; overflow: hidden; margin: 15px 0; }
+        .progress-bar-fill { height: 100%; width: 0%; background: var(--primary-coral); transition: 0.6s ease; }
+
+        .btn-share {
+            width: 100%; padding: 12px; border: 1px solid var(--soft-rose); border-radius: 12px;
+            background: transparent; color: var(--soft-rose); font-size: 0.85rem; font-weight: bold; cursor: pointer;
+            margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s;
+        }
+        .btn-share:hover { background: var(--soft-rose); color: white; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s; }
+        input[type="checkbox"] { width: 18px; height: 18px; margin-right: 12px; accent-color: var(--primary-coral); cursor: pointer; }
+        
+        #canvas-output { display: none; margin-top: 20px; width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>自律的朝聖之旅</h1>
+    <div id="current-date" style="font-size:1.0rem; font-weight:bold; margin-top:8px; background:rgba(255,255,255,0.2); padding:5px 15px; border-radius:20px; display:inline-block;"></div>
+</header>
+
+<nav>
+    <button onclick="showTab('daily')" id="btn-daily" class="active">每日修煉</button>
+    <button onclick="showTab('weekly')" id="btn-weekly">每週里程</button>
+    <button onclick="showTab('monthly')" id="btn-monthly">每月收穫</button>
+</nav>
+
+<div class="container">
+    <div id="panel-daily" class="stats-panel">
+        <span class="panel-title" id="cal-title">成長軌跡</span>
+        <div class="calendar-grid" id="calendar-grid"></div>
+    </div>
+    <div id="panel-weekly" class="stats-panel" style="display:none;"><span class="panel-title" id="week-panel-title">本月週次里程</span><div class="weekly-grid" id="weekly-grid"></div></div>
+    <div id="panel-monthly" class="stats-panel" style="display:none;"><span class="panel-title">年度達標足跡</span><div class="monthly-track" id="monthly-track"></div></div>
+
+    <div class="stats-panel" style="padding:15px; margin-top:-10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+            <span id="tab-title-display">目前進度</span>
+            <span id="percent-text">0%</span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+        <button class="btn-share" id="share-btn-text" onclick="handleShare()">📅 生成月度足跡成就卡</button>
+    </div>
+
+    <img id="canvas-output">
+    <canvas id="achievement-canvas" style="display:none;"></canvas>
+
+    <div id="daily" class="tab-content active">
+        <div class="item-card" data-days="0,1,2,3,4,5,6"><input type="checkbox" onchange="fireCheckboxConfetti(this); update();"> <span>有氧運動</span></div>
+        <div class="item-card" data-days="0,1,2,3,4,5,6"><input type="checkbox" onchange="fireCheckboxConfetti(this); update();"> <span>重量訓練</span></div>
+        <div class="item-card" data-days="1,2,3,4,5,6"><input type="checkbox" onchange="fireCheckboxConfetti(this); update();"> <span>英語單字與聽力</span></div>
+        <div class="item-card" data-days="1,2,3,4,5"><input type="checkbox" onchange="fireCheckboxConfetti(this); update();"> <span>醫學專業研讀</span></div>
+        <div class="item-card"><input type="checkbox" onchange="fireCheckboxConfetti(this); update();"> <span>靜心閱讀時間</span></div>
+        <div class="item-card"><input type="checkbox" onchange="fireCheckboxConfetti(this); update();"> <span>十點前就寢</span></div>
+        <div class="item-card"><input type="checkbox" onchange="fireCheckboxConfetti(this); update();"> <span>心情平穩不遷怒</span></div>
+        
+        <div class="item-card sweets-zone">
+            <div style="font-weight: bold; font-size: 0.9rem;">🍰 糕點意志力挑戰</div>
+            <div class="sweets-row">
+                <span>忍住購買糕點的衝動</span>
+                <button class="heart-btn" onclick="addHeart('❤️')">❤️ 忍住了</button>
+            </div>
+            <div class="sweets-row">
+                <span>無法忍住衝動，購買了糕點</span>
+                <button class="heart-btn" onclick="addHeart('💔')">💔 購買了</button>
+            </div>
+            <div id="today-emoji-status" style="font-size: 0.8rem; margin-top: 5px; color: var(--text-sub);">今日記錄：尚未有資料</div>
+        </div>
+    </div>
+
+    <div id="weekly" class="tab-content">
+        <div class="item-card"><input type="checkbox" id="week-cardio-cb" disabled> <span>有氧運動 ≥ 3次/週</span><span id="cardio-count-label" style="font-size:0.7rem; color:var(--primary-coral); font-weight:bold; margin-left:auto;">0/3</span></div>
+        <div class="item-card"><input type="checkbox" id="week-strength-cb" disabled> <span>重量訓練 ≥ 2次/週</span><span id="strength-count-label" style="font-size:0.7rem; color:var(--primary-coral); font-weight:bold; margin-left:auto;">0/2</span></div>
+    </div>
+
+    <div id="monthly" class="tab-content">
+        <div class="item-card"><input type="checkbox" onchange="fireCheckboxConfetti(this); update();"> <span>體重維持 < 58 kg</span></div>
+        <div class="item-card"><input type="checkbox" onchange="fireCheckboxConfetti(this); update();"> <span>體脂率維持 < 25%</span></div>
+        <div class="item-card"><input type="checkbox" onchange="fireCheckboxConfetti(this); update();"> <span>月開支控制 < 250,000</span></div>
+    </div>
+</div>
+
+<script>
+    const today = new Date();
+    const todayKey = today.toDateString();
+    let currentTab = 'daily';
+    let db = JSON.parse(localStorage.getItem('goal_final_v21')) || { 
+        daily_history: {}, daily_ticks: {}, daily_emojis: {}, weekly: {}, monthly: {}, lastDate: "" 
+    };
+
+    function fireCheckboxConfetti(el) {
+        if (el.checked) confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#E57373', '#D4A5A5', '#FFF'] });
+    }
+
+    function fireMilestoneConfetti() {
+        const duration = 2 * 1000;
+        const end = Date.now() + duration;
+        (function frame() {
+            confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#E57373'] });
+            confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#D4A5A5'] });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        }());
+    }
+
+    function initPage() {
+        document.getElementById('current-date').innerText = today.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        document.getElementById('cal-title').innerText = `${today.getMonth()+1}月 成長軌跡`;
+        document.getElementById('week-panel-title').innerText = `${today.getMonth()+1}月 週次里程`;
+
+        document.querySelectorAll('#daily .item-card[data-days]').forEach(item => {
+            const allowed = item.getAttribute('data-days').split(',').map(Number);
+            if (!allowed.includes(today.getDay())) {
+                item.classList.add('rest-day');
+                item.querySelector('input').disabled = true;
+            }
+        });
+
+        const isNewDay = db.lastDate !== todayKey;
+        const savedTicks = db.daily_ticks[todayKey] || [];
+        document.querySelectorAll('#daily input[type="checkbox"]').forEach((input, i) => {
+            if (!input.disabled) input.checked = isNewDay ? false : (savedTicks[i] || false);
+        });
+
+        db.lastDate = todayKey;
+        updateEmojiUI();
+        update(); 
+    }
+
+    function addHeart(emoji) {
+        if (!db.daily_emojis[todayKey]) db.daily_emojis[todayKey] = "";
+        db.daily_emojis[todayKey] += emoji;
+        if (emoji === '❤️') confetti({ particleCount: 60, spread: 80, origin: { y: 0.8 }, colors: ['#FF6B6B'] });
+        updateEmojiUI();
+        update();
+    }
+
+    function formatEmojis(str) {
+        return str.split('').map(char => {
+            if (char === '❤️') return `<span class="emoji-heart">❤️</span>`;
+            if (char === '💔') return `<span class="emoji-broken">💔</span>`;
+            return char;
+        }).join('');
+    }
+
+    function updateEmojiUI() {
+        const raw = db.daily_emojis[todayKey] || "";
+        document.getElementById('today-emoji-status').innerHTML = `今日戰況：${formatEmojis(raw)}`;
+    }
+
+    function update() {
+        const activeTab = document.getElementById(currentTab);
+        const inputs = Array.from(activeTab.querySelectorAll('input[type="checkbox"]'));
+        const activeInputs = inputs.filter(i => !i.disabled);
+        const checked = activeInputs.filter(i => i.checked);
+        let percent = activeInputs.length ? Math.round((checked.length / activeInputs.length) * 100) : 0;
+        
+        if(currentTab === 'daily') {
+            const emo = db.daily_emojis[todayKey] || "";
+            const h = (emo.match(/❤️/g) || []).length;
+            const b = (emo.match(/💔/g) || []).length;
+            percent = Math.min(100, Math.max(0, percent + h - b));
+            db.daily_history[todayKey] = percent;
+            db.daily_ticks[todayKey] = Array.from(document.querySelectorAll('#daily input[type="checkbox"]')).map(i => i.checked);
+            checkWeeklyAuto();
+        } else if(currentTab === 'monthly') {
+            db.monthly[`${today.getFullYear()}-M${today.getMonth()+1}`] = (percent === 100);
+        }
+
+        document.getElementById('progress-fill').style.width = percent + '%';
+        document.getElementById('percent-text').innerText = percent + '%';
+        inputs.forEach(i => i.parentElement.classList.toggle('completed', i.checked));
+
+        refreshStats();
+        localStorage.setItem('goal_final_v21', JSON.stringify(db));
+    }
+
+    function checkWeeklyAuto() {
+        const start = new Date(today);
+        start.setDate(start.getDate() - (start.getDay() || 7) + 1);
+        let c=0, s=0;
+        for(let i=0; i<7; i++){
+            const ticks = db.daily_ticks[new Date(start).toDateString()];
+            if(ticks){ if(ticks[0]) c++; if(ticks[1]) s++; }
+            start.setDate(start.getDate()+1);
+        }
+        document.getElementById('cardio-count-label').innerText = `${c}/3`;
+        document.getElementById('strength-count-label').innerText = `${s}/2`;
+        const cbC = document.getElementById('week-cardio-cb'), cbS = document.getElementById('week-strength-cb');
+        const oldDone = cbC.checked && cbS.checked;
+        cbC.checked = (c>=3); cbS.checked = (s>=2);
+        if(!oldDone && cbC.checked && cbS.checked) fireMilestoneConfetti();
+        const wIdx = Math.ceil((today.getDate() + (new Date(today.getFullYear(), today.getMonth(), 1).getDay() || 7) - 1) / 7);
+        db.weekly[`${today.getFullYear()}-${today.getMonth()+1}-W${wIdx}`] = (cbC.checked && cbS.checked);
+    }
+
+    function refreshStats() {
+        const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
+        const year = today.getFullYear(), month = today.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        for(let d=1; d<=daysInMonth; d++){
+            const dKey = new Date(year, month, d).toDateString();
+            const p = db.daily_history[dKey] || 0;
+            const emo = db.daily_emojis[dKey] || "";
+            const cell = document.createElement('div');
+            cell.className = 'calendar-cell';
+            if (p >= 100) cell.classList.add('cell-perfect');
+            else if (p >= 50) cell.classList.add('cell-good');
+            else if (p > 0) cell.classList.add('cell-started');
+            cell.innerHTML = `<b>${d}</b><span style="font-size:0.5rem">${p}%</span><div class="emoji-trail">${formatEmojis(emo)}</div>`;
+            grid.appendChild(cell);
+        }
+        const wGrid = document.getElementById('weekly-grid'); wGrid.innerHTML = '';
+        const totalW = Math.ceil(daysInMonth / 7);
+        for(let w=1; w<=totalW; w++){
+            const done = db.weekly[`${year}-${month+1}-W${w}`];
+            const box = document.createElement('div');
+            box.className = 'week-box' + (done?' week-done':''); box.innerText = `第${w}週`; wGrid.appendChild(box);
+        }
+        const mTrack = document.getElementById('monthly-track'); mTrack.innerHTML = '';
+        for(let m=1; m<=12; m++){
+            const done = db.monthly[`${year}-M${m}`];
+            const circle = document.createElement('div');
+            circle.className = 'month-circle' + (done?' month-done':''); circle.innerText = m+'月'; mTrack.appendChild(circle);
+        }
+    }
+
+    function showTab(id) {
+        currentTab = id;
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('panel-daily').style.display = (id === 'daily' ? 'block' : 'none');
+        document.getElementById('panel-weekly').style.display = (id === 'weekly' ? 'block' : 'none');
+        document.getElementById('panel-monthly').style.display = (id === 'monthly' ? 'block' : 'none');
+        document.getElementById(id).classList.add('active');
+        document.getElementById('btn-'+id).classList.add('active');
+        const btnText = document.getElementById('share-btn-text');
+        if(id === 'daily') btnText.innerText = '📅 生成月度足跡成就卡';
+        else if(id === 'weekly') btnText.innerText = '🏆 生成週里程里程碑卡';
+        else btnText.innerText = '🌟 生成年度目標追蹤卡';
+        update();
+    }
+
+    // --- 成就卡生成邏輯 ---
+    function handleShare() {
+        const canvas = document.getElementById('achievement-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 600; canvas.height = 850;
+
+        const grad = ctx.createLinearGradient(0, 0, 0, 850);
+        grad.addColorStop(0, '#E8D7D0'); grad.addColorStop(1, '#D4A5A5');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, 600, 850);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.roundRect(30, 30, 540, 790, 25); ctx.fill();
+
+        ctx.fillStyle = '#5D5451'; ctx.font = 'bold 36px sans-serif'; 
+        let title = "我的自律朝聖";
+        if(currentTab === 'daily') title = `${today.getMonth()+1}月 月度足跡`;
+        else if(currentTab === 'weekly') title = `${today.getMonth()+1}月 週里程里程碑`;
+        else title = `${today.getFullYear()} 年度里程目標`;
+        ctx.fillText(title, 70, 95);
+        ctx.font = '20px sans-serif'; ctx.fillText('The Pilgrimage of Discipline', 70, 130);
+
+        if(currentTab === 'daily') drawCalendarCard(ctx);
+        else if(currentTab === 'weekly') drawWeeklyCard(ctx);
+        else drawMonthlyCard(ctx);
+
+        const output = document.getElementById('canvas-output');
+        output.src = canvas.toDataURL('image/png'); output.style.display = 'block';
+        window.scrollTo({ top: output.offsetTop, behavior: 'smooth' });
+    }
+
+    function drawCalendarCard(ctx) {
+        const startX = 70, startY = 220, cellSize = 65, gap = 8;
+        const year = today.getFullYear(), month = today.getMonth();
+        const days = new Date(year, month + 1, 0).getDate();
+        for(let d=1; d<=days; d++) {
+            const row = Math.floor((d-1) / 7), col = (d-1) % 7;
+            const x = startX + col * (cellSize + gap), y = startY + row * (cellSize + gap);
+            const p = db.daily_history[new Date(year, month, d).toDateString()] || 0;
+            ctx.fillStyle = p>=100?'#E57373':p>=50?'#F8BDBD':p>0?'#EAE3DC':'#F9F7F5';
+            ctx.roundRect(x, y, cellSize, cellSize, 8); ctx.fill();
+            // 修正：在格子上顯示日期與百分比
+            ctx.fillStyle = p>=50?'#FFF':'#8D837F'; 
+            ctx.font='bold 16px sans-serif'; ctx.fillText(d, x+8, y+22);
+            ctx.font='12px sans-serif'; ctx.fillText(`${p}%`, x+8, y+45);
+        }
+        ctx.fillStyle = '#D4A5A5'; ctx.font = 'italic 18px sans-serif'; ctx.fillText('「時光不語，卻記錄了所有的堅持。」', 140, 780);
+    }
+
+    function drawWeeklyCard(ctx) {
+        // 修正：只顯示週次行事曆，移除文字說明
+        ctx.fillStyle = '#5D5451'; ctx.font = 'bold 24px sans-serif'; ctx.fillText('本月達成進度：', 70, 240);
+        const startX = 70, startY = 280, wWidth = 90, wHeight = 60, gap = 15;
+        const totalW = Math.ceil(new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() / 7);
+        for(let w=1; w<=totalW; w++){
+            const row = Math.floor((w-1)/3), col = (w-1)%3;
+            const x = startX + col * (wWidth + gap), y = startY + row * (wHeight + gap);
+            const done = db.weekly[`${today.getFullYear()}-${today.getMonth()+1}-W${w}`];
+            ctx.fillStyle = done ? '#9DAFBD' : '#EEE';
+            ctx.roundRect(x, y, wWidth, wHeight, 12); ctx.fill();
+            ctx.fillStyle = done ? '#FFF' : '#8D837F'; ctx.font='bold 18px sans-serif'; ctx.fillText(`第 ${w} 週`, x+18, y+38);
+        }
+        ctx.fillStyle = '#D4A5A5'; ctx.font = 'italic 18px sans-serif'; ctx.fillText('「穩定，是自律最優雅的力量。」', 160, 780);
+    }
+
+    function drawMonthlyCard(ctx) {
+        const startX = 100, startY = 300, radius = 35, xGap = 80, yGap = 100;
+        for(let m=1; m<=12; m++) {
+            const row = Math.floor((m-1)/6), col = (m-1)%6;
+            const x = startX + col * xGap, y = startY + row * yGap;
+            const done = db.monthly[`${today.getFullYear()}-M${m}`];
+            ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI*2);
+            ctx.fillStyle = done ? '#B0A4B1' : '#EEE'; ctx.fill();
+            ctx.fillStyle = done ? '#FFF' : '#8D837F'; ctx.font='bold 16px sans-serif'; ctx.fillText(`${m}月`, x-15, y+5);
+        }
+        ctx.fillStyle = '#D4A5A5'; ctx.font = 'italic 18px sans-serif'; ctx.fillText('「宏大的目標，始於每個月的綻放。」', 140, 780);
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        this.beginPath(); this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r);
+        this.closePath(); return this;
+    };
+
+    window.onload = initPage;
+</script>
+</body>
+</html>

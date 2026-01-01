@@ -1,0 +1,15 @@
+{
+  "name": "自律的朝聖之旅",
+  "short_name": "朝聖之旅",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#F5F2ED",
+  "theme_color": "#E57373",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
